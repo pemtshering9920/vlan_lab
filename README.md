@@ -1,111 +1,122 @@
-VLAN Isolation Lab Manager
-
 <div align="center">
-https://img.shields.io/badge/Network-Isolated%2520Lab-blue
-https://img.shields.io/badge/Platform-Linux%2520%257C%2520Kali%2520VM-green
-https://img.shields.io/badge/License-MIT-orange
-
-Create secure, isolated VLAN lab environments for cybersecurity training
-
+<h1>🔐 VLAN Isolation Lab Manager</h1>
+<p><strong>Create an isolated networking environment for safe cybersecurity practice</strong></p>
 </div>
 
+<hr>
 
-Complete Setup Guide
-Step 1: Install QEMU/KVM and Dependencies
-For Arch-based Systems:
+<h2>📋 Overview</h2>
+<p>This tool creates a secure, isolated VLAN network between your physical host and Kali Linux VM. Your Kali VM gets internet access but <strong>cannot access your home network</strong> - perfect for safe penetration testing practice.</p>
 
-bash
-sudo pacman -S qemu-full virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat libvirt libguestfs ebtables spice-vdagent virtiofsd
-For Debian/Ubuntu Systems:
+<p><strong>Network Layout:</strong></p>
+<ul>
+<li>Host: <code>10.66.66.1/24</code> (gateway)</li>
+<li>Kali VM: <code>10.66.66.2/24</code></li>
+<li>VLAN ID: <code>66</code></li>
+<li>Home network: <strong>BLOCKED</strong></li>
+</ul>
 
-bash
-sudo apt install qemu-system qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager virt-viewer dnsmasq vde2 ebtables iptables qemu-guest-agent spice-vdagent virtiofsd
-Common Configuration:
+<hr>
 
-bash
-# Enable and start libvirtd
-sudo systemctl enable libvirtd
-sudo systemctl start libvirtd
+<h2>🛠️ Prerequisites: QEMU/KVM Installation</h2>
 
-# Add user to groups
-sudo usermod -aG libvirt $(whoami)
+<h3>For Arch-based Systems (Arch, Manjaro, EndeavourOS):</h3>
+
+<pre><code># Install all the Tools & Dependencies
+sudo pacman -S qemu-full virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat libvirt libguestfs ebtables spice-vdagent virtiofsd</code></pre>
+
+<p><strong>Note:</strong> Some new systems come pre-installed with iptables-nft instead of legacy iptables. Installing 'iptables' is optional, only include if you want.</p>
+
+<h3>For Debian/Ubuntu based System:</h3>
+
+<pre><code>sudo apt install qemu-system qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager virt-viewer dnsmasq vde2 ebtables iptables qemu-guest-agent spice-vdagent virtiofsd</code></pre>
+
+<hr>
+
+<h2>⚙️ Common Configuration Steps</h2>
+
+<h3>STEP 1: Enable libvirtd</h3>
+<pre><code>sudo systemctl enable libvirtd
+sudo systemctl start libvirtd</code></pre>
+
+<h3>STEP 2: Add user to libvirt group</h3>
+<pre><code>sudo usermod -aG libvirt $(whoami)
 sudo usermod -aG kvm $(whoami)
-newgrp libvirt
+newgrp libvirt</code></pre>
 
-# Configure default network
-sudo virsh net-start default
-sudo virsh net-autostart default
+<h3>STEP 3: Check virtual network status</h3>
+<pre><code>sudo EDITOR=vim virsh net-edit default
+sudo systemctl status libvirtd</code></pre>
 
-# Set firewall backend to iptables
-sudo bash -c 'echo "firewall_backend = \"iptables\"" > /etc/libvirt/network.conf'
-sudo systemctl restart libvirtd
-Step 2: Run Host Setup
-On your physical machine:
+<p><strong>For Ubuntu/Debian:</strong></p>
+<pre><code>sudo systemctl start libvirtd
+sudo systemctl enable libvirtd</code></pre>
 
-bash
-# Download and make executable
-wget https://raw.githubusercontent.com/yourusername/vlan-lab/main/vlan_lab.sh
-chmod +x vlan_lab.sh
+<h3>STEP 4: Start and configure autostart for the default network</h3>
+<pre><code>sudo virsh net-start default
+sudo virsh net-autostart default</code></pre>
 
-# Run as host
-sudo ./vlan_lab.sh
-Select option: 1 (Setup as HOST)
+<h3>STEP 5: Configure firewall_backend on libvirt network config</h3>
+<pre><code>sudo vim /etc/libvirt/network.conf</code></pre>
+<p>Edit this config and add:</p>
+<pre><code>firewall_backend = "iptables"</code></pre>
+<p><strong>Note:</strong> It will not work without setting this up to iptables in new systems.</p>
 
-Step 3: Configure VM Network
-Shutdown your Kali VM
+<h3>STEP 6: Restart libvirtd</h3>
+<pre><code>sudo systemctl restart libvirtd</code></pre>
 
-Open VM Settings → Network
+<h3>STEP 7: Start Virtual Machine Manager</h3>
+<pre><code>virt-manager</code></pre>
 
-Set to: Bridge mode
+<hr>
 
-Bridge to: br0
+<h2>🚀 Using VLAN Isolation Lab Manager</h2>
 
-Start VM
+<h3>Step 1: Download the Script</h3>
+<pre><code>wget https://github.com/pemtshering9920/vlan_lab/blob/main/isolated_vlan_lab.sh
+chmod +x isolated_vlan_lab.sh</code></pre>
 
-Step 4: Run Guest Setup
-Inside Kali VM:
+<h3>Step 2: Run as HOST (Physical Machine)</h3>
+<pre><code>sudo ./isolated_vlan_lab.sh</code></pre>
+<p>Select option: <code>1</code> (Setup as HOST)</p>
 
-bash
-# Get the script in VM
-wget https://raw.githubusercontent.com/yourusername/vlan-lab/main/vlan_lab.sh
-chmod +x vlan_lab.sh
+<h3>Step 3: Configure QEMU VM</h3>
+<ol>
+<li>Open QEMU VM in Bridge mode</li>
+<li>Set device name to: <code>br0</code></li>
+<li>Save and start the VM</li>
+</ol>
 
-# Run as guest
-sudo ./vlan_lab.sh
-Select option: 2 (Setup as GUEST)
+<h3>Step 4: Run as GUEST (Inside VM)</h3>
+<pre><code>sudo ./isolated_vlan_lab.sh</code></pre>
+<p>Select option: <code>2</code> (Setup as GUEST)</p>
 
-Step 5: Test Connectivity
-In Kali VM:
+<h3>Step 5: Check Internet Connection</h3>
+<pre><code>ping 8.8.8.8</code></pre>
 
-bash
-ping 10.66.66.1    # Should work (host gateway)
-ping 8.8.8.8       # Should work (internet)
-ping 192.168.1.1   # Should FAIL (home network isolated)
-Cleanup (When Done)
-On both systems:
+<hr>
 
-bash
-sudo ./vlan_lab.sh
-Select option: 3 (Smart Cleanup)
+<h2>🔄 Cleanup</h2>
+<pre><code>sudo ./isolated_vlan_lab.sh</code></pre>
+<p>Select option: <code>3</code> (Smart Cleanup)</p>
 
-Troubleshooting
-If internet doesn't work in VM:
+<hr>
 
-Check ip addr show br0.66 on host
+<h2>❓ Troubleshooting</h2>
 
-Verify VM uses "Bridge to br0"
+<h3>If internet doesn't work:</h3>
+<ol>
+<li>Check <code>ip addr show br0.66</code> on host</li>
+<li>Verify VM uses "Bridge to br0" not NAT</li>
+<li>Run <code>sudo iptables -t nat -L</code> on host</li>
+</ol>
 
-Run sudo iptables -t nat -L on host
+<h3>If interface not found:</h3>
+<pre><code>ip link show</code></pre>
+<p>Check your interface name (eth0, ens33, enp0s3, etc.)</p>
 
-If script shows "Interface not found":
+<hr>
 
-Run ip link show to see interface names
-
-Ensure VM network adapter is connected
-
-Network Layout
-text
-Host: 10.66.66.1/24 (gateway)
-VM:   10.66.66.2/24
-VLAN: 66
-Note: Your home network (192.168.x.x) is automatically blocked for safety.
+<div align="center">
+<p><strong>Happy and safe penetration testing! 🎯</strong></p>
+</div>
